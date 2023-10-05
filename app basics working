@@ -1,0 +1,94 @@
+import SwiftUI
+
+@main
+struct TodoApp: App {
+    // Create an AppStorage key to store the selected theme mode
+    @AppStorage("selectedThemeMode") var selectedThemeMode = AppThemeMode.light.rawValue
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .preferredColorScheme(selectedThemeMode == AppThemeMode.dark.rawValue ? .dark : .light)
+        }
+    }
+}
+
+enum AppThemeMode: String {
+    case light
+    case dark
+}
+
+struct ContentView: View {
+    @State private var tasks: [Task] = []
+    @State private var newTask = ""
+
+    var body: some View {
+        NavigationView {
+            VStack {
+                List {
+                    ForEach(tasks.indices, id: \.self) { index in
+                        TaskRow(task: $tasks[index])
+                    }
+                    .onDelete(perform: deleteTask)
+                }
+                .listStyle(PlainListStyle())
+
+                HStack {
+                    TextField("Add a new task", text: $newTask)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+
+                    Button(action: addTask) {
+                        Text("Add")
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("To-Do List")
+        }
+    }
+
+    func addTask() {
+        if !newTask.isEmpty {
+            tasks.append(Task(title: newTask, details: ""))
+            newTask = ""
+        }
+    }
+
+    func deleteTask(at offsets: IndexSet) {
+        tasks.remove(atOffsets: offsets)
+    }
+}
+
+struct TaskRow: View {
+    @Binding var task: Task
+    @State private var showDetails = false
+
+    var body: some View {
+        VStack {
+            HStack {
+                Text(task.title)
+                    .foregroundColor(.black)
+                Spacer()
+                Button(action: {
+                    withAnimation {
+                        showDetails.toggle()
+                    }
+                }) {
+                    Image(systemName: showDetails ? "chevron.up" : "chevron.down")
+                }
+            }
+            if showDetails {
+                TextEditor(text: $task.details)
+                    .foregroundColor(.black)
+                    .frame(height: 100)
+                    .padding(.horizontal)
+            }
+        }
+    }
+}
+
+struct Task: Identifiable {
+    let id = UUID()
+    var title: String
+    var details: String
+}
